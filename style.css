@@ -1,0 +1,66 @@
+body{
+    height: 100vh;
+    margin:0;
+    padding:0;
+    box-sizing: border-box;
+    display: grid;
+    place-content: center;
+    background-color: #252525;
+}
+.container-chess{
+    display:grid;
+    grid-template-columns: repeat(8, 75px);
+    grid-template-rows: repeat(8, 75px);
+    
+}
+
+.container-chess div{
+    cursor: pointer;
+}
+
+.odd {
+    background-color: #fff;
+}
+
+.even{
+    background-color: #8877B7;
+}
+
+.container-chess div:nth-child(1){
+    border-top-left-radius: 15px;
+}
+
+.container-chess div:nth-child(8){
+    border-top-right-radius: 15px;
+}
+
+.container-chess div:nth-child(57){
+    border-bottom-left-radius: 15px;
+}
+
+.container-chess div:nth-child(64){
+    border-bottom-right-radius: 15px;
+}
+
+.img{
+    padding:20px;
+    width: 75px;
+    height: 75px;
+    padding:0px;
+    background-size: 100%;
+    /* transition: all .1s linear; */
+}
+
+.circle::before{
+    content: '';
+    width: 30px;
+    height: 30px;
+    display: block;
+    background-color: #252525;
+    border-radius:100%;
+    opacity: 0.5;
+    position: relative;
+    pointer-events: none;
+    top:23px;
+    left:23px;
+}
