@@ -7,6 +7,10 @@ let move = 0
 let togglePlayer = 1
 let idBefore = null
 let beforeGrid = []
+let positionsKings = [4, 60]
+let actuaclesMovements = []
+let actualPiece = null
+
 let grids = [
     { player:0,piece:'toward'},
     { player:0,piece:'horse'},
@@ -45,30 +49,24 @@ let grids = [
     { player:1,piece:'horse'},
     { player:1,piece:'toward'}
 ]
-let positionsKings = [4, 60]
-
 const piecesImgsPlayerOne = {
     'toward':'./images/chess-rook-svgrepo-com.svg',
     'horse':'./images/chess-knight-svgrepo-com.svg',
     'alpil':'./images/chess-bishop-svgrepo-com.svg',
-    // 'queen':'./images/New_Project.svg',
-    'queen':'./images/chess-queen-svgrepo-com.svg',
+    'queen':'./images/New_Project.svg',
+    // 'queen':'./images/chess-queen-svgrepo-com.svg',
     'king':'./images/chess-king-svgrepo-com.svg',
     'pawn':'./images/chess-pawn-svgrepo-com.svg',
 }
-
 const piecesImgsPlayerTwo = {
     'toward':'./images/chess-rook-svgrepo-com-white.svg',
     'horse':'./images/chess-knight-svgrepo-com-white.svg',
     'alpil':'./images/chess-bishop-svgrepo-com-white.svg',
-    //'queen':'./images/New_Project.svg',
-    'queen':'./images/chess-queen-svgrepo-com-white.svg',
+    'queen':'./images/New_Project.svg',
+    // 'queen':'./images/chess-queen-svgrepo-com-white.svg',
     'king':'./images/chess-king-svgrepo-com-white.svg',
     'pawn':'./images/chess-pawn-svgrepo-com-white.svg',
 }
-
-let actuaclesMovements = []
-let actualPiece = null
 
 // CREACION DE LA GRILLA
 
@@ -92,7 +90,10 @@ grids.forEach((grid, index) => {
         let img = document.createElement('div')
         img.classList.add('img')
         img.style.backgroundImage = 
-            `url(${grid.player == 0 ? piecesImgsPlayerOne[grid.piece] : piecesImgsPlayerTwo[grid.piece]})`
+            `url(${grid.player == 0 ? 
+                piecesImgsPlayerOne[grid.piece] : 
+                piecesImgsPlayerTwo[grid.piece]}
+            )`
         img.id = index
         div.appendChild(img)
     }
@@ -100,25 +101,37 @@ grids.forEach((grid, index) => {
 })
 
 grids = grids.map(grid => {
-    return grid.piece == undefined ? grid : {...grid, actuaclesMovements:[]}
+    return !grid.piece ? grid : {...grid, actuaclesMovements:[]}
 })
 
 
 let divs = Array.from(document.querySelectorAll('.grid'))
 
 
-// FUNCIONES ----------
 
 
+
+
+
+
+
+
+
+
+// FUNCIONES ---------------------------------------------------------------------------------------
+
+// Comprueba si es una pieza enemiga
 const comprobatePieceEnemy = (id,playerActual) => 
     grids[id].player != undefined && grids[id].player != playerActual ? 1 : 0
 
+// Comprueba si es una pieza aliada
+const comprobatePieceAlie = (idOne,idTwo) => {
+    comprobateMovementKing(idTwo,idOne)
+    return grids[idOne].player != idTwo
+}
 
-const comprobatePieceAlie = (idOne,idTwo) =>
-    grids[idOne].player != idTwo
 
-
-//  AGREGA A UNA LISTA LOS POSIBLES MOVIMIENTOS DE LA PIEZA ACTUAL
+//  Agrega a una lista los posibles movimientos de la pieza actual
 const addStyleGrids = (add,actuaclesMovements) => {
     actuaclesMovements.filter(item => item != undefined).forEach(movement => {
         const div = divs.find(d => d.id == movement)
@@ -126,12 +139,26 @@ const addStyleGrids = (add,actuaclesMovements) => {
     })
 }
 
-// ROTACION DEL TABLERO
-
+// Rotacion del tablero
 const rotatePanel = () => {
     document.querySelector('.container-chess').append(...divs.reverse())
 }
 
+// Comprueba si el movimiento esta includio en los movimientos actuales del rey, si es asi, lo saca de los 
+// movimientos actuales del rey
+const comprobateMovementKing = (player,id) => {
+    let kingActual = grids[positionsKings[player == 0 ? 1 : 0]]
+    
+    if(
+        kingActual.actuaclesMovements.includes(id)
+    ) {
+        kingActual.actuaclesMovements = 
+            kingActual.actuaclesMovements.filter(item => item != id)
+    }
+}
+
+
+// Genera el movimiento en Y
 const movementY = (id, tb, limit) => {
     let playerActual = grids[id].player 
     while(
@@ -140,11 +167,13 @@ const movementY = (id, tb, limit) => {
         (tb == 8 ? id < limit : id > limit)
     ){
         actuaclesMovements.push(id + tb)
+        comprobateMovementKing(playerActual,id + tb)
         if(comprobatePieceEnemy(id + tb,playerActual)) return
         id += tb
     }
 }
 
+// Genera el movimiento en X
 const movementX = (id,l) => {
     let playerActual = grids[id].player 
     let rest = id % 8 
@@ -155,6 +184,7 @@ const movementX = (id,l) => {
         comprobatePieceAlie(Id, playerActual) 
     ){
         actuaclesMovements.push(Id)
+        comprobateMovementKing(playerActual,Id)
         if(comprobatePieceEnemy(Id,playerActual)) return
         rest += l ? -1 : 1 
         count++
@@ -162,6 +192,7 @@ const movementX = (id,l) => {
     }
 }
 
+// Genera el movimiento del alfil
 const movementZ = (id, tb, limit, l) => {
     let playerActual = grids[id].player 
     let one = l ? -1 : 1
@@ -175,6 +206,7 @@ const movementZ = (id, tb, limit, l) => {
         (l ? rest > 0 : rest < 7) 
     ){
         actuaclesMovements.push(Id)
+        comprobateMovementKing(playerActual,Id)
         if(comprobatePieceEnemy(Id,playerActual)) return
         id += tb
         count += one
@@ -183,6 +215,7 @@ const movementZ = (id, tb, limit, l) => {
     }
 }
 
+// Genera el movimiento en L del caballo
 const movementL = (id,num, mul, one) => {
     let grid = id + num  // Calcula la fila en donde moverse
     let piece = grid + (one * mul)  // calcula el id para generar la forma de L
@@ -199,8 +232,8 @@ const movementL = (id,num, mul, one) => {
         comprobatePieceAlie(piece, grids[id].player)
     ){
         actuaclesMovements.push(piece)
+        comprobateMovementKing(grids[id].player,piece)
     }
-    
 }
 
 // REGLAS PARA LAS TORRES
@@ -209,7 +242,7 @@ const movementToward = id => {
     movementY(id,-8, 0)
     movementY(id,8, 64)
     movementX(id,true)
-    movementX(id,false)
+    movementX(id)
 }
 
 // REGLAS PARA LOS ALFILES
@@ -234,9 +267,10 @@ const movementKing = (id,king) => {
         id < 0 ||
         id > 63 ||
         grids[id].player == grids[king].player
-    ) return;
-    console.log(id)
+    ) return null
+    return id
 }
+
 
 const movementPiece = (img, divFind) => {
     img.style.cursor = 'grab'
@@ -249,48 +283,52 @@ const movementPiece = (img, divFind) => {
         img.style.top = beforeGrid[1] + 'px'
         return
     }
-    addStyleGrids('remove', grids[img.id].actuaclesMovements)
-    // if(grids[img.id].player != togglePlayer) return
-    if(img.id != divFind.id){
-        if(grids[img.id].piece == 'pawn') {
-            grids[img.id].firstMovement ??= true
-            // Convertir al peon en rey
-            if(divFind.id < 8 || divFind.id > 55 ){
-                grids[img.id].piece = 'queen'
-                img.style.backgroundImage = 
-                    `url(${grids[img.id].player == 0 ? 
-                            piecesImgsPlayerOne[grids[img.id].piece] : 
-                            piecesImgsPlayerTwo[grids[img.id].piece]
-                    })`
-            }
+
+    addStyleGrids('remove', grids[img.id].actuaclesMovements) // Removueve los circulos de senializacion de posibles movimientos
+    // 
+    if(img.id == divFind.id) return // Comprueba que si el id de la pieza es igual al del casillero seleccionado no haga nada
+
+
+    if(grids[img.id].piece == 'pawn') {
+        grids[img.id].firstMovement ??= true
+
+        // Convertir al peon en rey
+        if(divFind.id < 8 || divFind.id > 55 ){
+            grids[img.id].piece = 'queen'
+            img.style.backgroundImage = 
+                `url(${grids[img.id].player == 0 ? 
+                    piecesImgsPlayerOne[grids[img.id].piece] : 
+                    piecesImgsPlayerTwo[grids[img.id].piece]
+                })`
         }
-        togglePlayer = togglePlayer == 0 ? 1 : 0
-        let beforeMove = grids[img.id]
-        grids[img.id] = {}
-        img.id = divFind.id
-        grids[img.id] = beforeMove
-        let beforeChild = divFind.children.item(0)
-        beforeChild && divFind.removeChild(divFind.children.item(0))
-        divFind.appendChild(img)
-        beforeGrid = [divs[img.id].offsetLeft, divs[img.id].offsetTop]
-        
-        idBefore = beforeMove.id
-        if(grids[img.id].piece == 'king'){
-            positionsKings[grids[img.id].player] = img.id
-        }
-        divs.forEach(div => {
-            let imgFound = div.children.item(0)
-            if(!imgFound) return
-            actuaclesMovements = []
-            comprobateKingAndPieces(imgFound)
-        })
-        actuaclesMovements = []
-        // rotatePanel()
     }
+    // Cambios a nivel de memoria
+    togglePlayer = togglePlayer == 0 ? 1 : 0
+    let beforeMove = grids[img.id]
+    grids[img.id] = {}
+    img.id = divFind.id
+    grids[img.id] = beforeMove
+    let beforeChild = divFind.children.item(0)
+    beforeGrid = [divs[img.id].offsetLeft, divs[img.id].offsetTop]
+    idBefore = beforeMove.id
+
+    if(grids[img.id].piece == 'king'){
+        positionsKings[grids[img.id].player] = Number(img.id)
+    }
+    // Cambios a nivel de DOM
+    beforeChild && divFind.removeChild(divFind.children.item(0))
+    divFind.appendChild(img)
+    
+    
+
+    comprobateKingAndPieces()
+    actuaclesMovements = []
+    // rotatePanel()
 }
 
-const comprobatePiece = (img,id) => {
-    if(grids[id].piece == 'pawn'){
+
+const comprobatePieceObj = {
+    'pawn': id => {
         let numAdvance = grids[id].player == 0 ? 8 : -8
         if(!grids[id + numAdvance].piece){
             actuaclesMovements = 
@@ -307,65 +345,79 @@ const comprobatePiece = (img,id) => {
 
         grids[id + numAdvance - 1].player == enemy &&
         actuaclesMovements.push(id + numAdvance - 1)  
-        actualPiece = img
-    }
-
-    if(grids[id].piece == 'toward'){
+    },
+    'toward': id => {
         movementToward(id)
-        actualPiece = img
-    }
-
-    if(grids[id].piece == 'alpil'){
+    },
+    'alpil': id => {
         movementAlpil(id)
-        actualPiece = img
-    }
-
-    if(grids[id].piece == 'queen'){
+    },
+    'queen': id => {
         movementToward(id)
         movementAlpil(id)
-        actualPiece = img
-    }
-
-    if(grids[id].piece == 'horse'){
+    },
+    'horse': id => {
         movementHorse(id ,-16, 1)
         movementHorse(id ,16, 1)
         movementHorse(id, -8, 2)
         movementHorse(id, 8, 2)
-        actualPiece = img
     }
 }
 
-
-const comprobateKingAndPieces = (img) => {
+const comprobatePiece = (img) => {
     let id = Number(img.id)
-    beforeGrid = [img.offsetLeft, img.offsetTop]
-    positionsKings.forEach((king,index) => {
-        movementKing(king, king)
-        movementKing(king + 8, king)
-        movementKing(king + 8 + 1, king)
-        movementKing(king + 8 - 1, king)
-        movementKing(king - 8, king)
-        movementKing(king - 8 + 1, king)
-        movementKing(king - 8 - 1, king)
-        movementKing(king + 1, king)
-        movementKing(king - 1, king)
-    })
-    comprobatePiece(img,id)
+    let piece = grids[id].piece
+    if(comprobatePieceObj[piece] ){
+        comprobatePieceObj[piece](id)
+        actualPiece = img
+    }
     grids[id] = {...grids[id], actuaclesMovements}
 }
 
 
+const comprobateKingAndPieces = () => {
+    positionsKings.forEach((king,index) => {
+        const movements = [
+            king + 8, king + 8 + 1, king + 8 - 1, 
+            king - 8, king - 8 + 1, king - 8 - 1, 
+            king + 1, king - 1
+        ]
+        grids[positionsKings[index]] = {
+            ...grids[king],
+            actuaclesMovements: []
+        }
+        movements.forEach(k => {
+            let idPiece = movementKing(k,king)
+            if(idPiece == null) return
+            grids[king].actuaclesMovements.push(idPiece)
+        })
+    })
+    divs.forEach(div => {
+        let imgFound = div.children.item(0)
+        if(!imgFound || grids[imgFound.id].piece == 'king') return
+        actuaclesMovements = []
+        comprobatePiece(imgFound)
+    })
+}
+
+// --------------------------------------------
+
+
+
+
+
 // EVENTOS PARA LOS CONTENEDORES
 
+comprobateKingAndPieces()
 divs.forEach(div => {
     let img = div.children.item(0)
 
     div.addEventListener('click', e => {
         movementPiece(actualPiece,div)
     })
+
     if(img == null) return
-    comprobateKingAndPieces(img)
-    actuaclesMovements = []
+
     img.addEventListener('mousedown', e => {
         img.style.left = (img.offsetLeft) + 'px'
         img.style.top = (img.offsetTop) + 'px'
@@ -374,9 +426,6 @@ divs.forEach(div => {
         actualPiece = img
         idBefore != null && addStyleGrids('remove', grids[idBefore].actuaclesMovements)
         actuaclesMovements = []
-        if(grids[img.id].piece != undefined && grids[img.id].actuaclesMovements.length == 0){
-            comprobateKingAndPieces(img)
-        }
         move = 1
         addStyleGrids('add',grids[img.id].actuaclesMovements)
     })
@@ -390,7 +439,6 @@ divs.forEach(div => {
 
     img.addEventListener('mouseup', e => {
         
-
         // Busca la Pieza
         const divFind = divs.find(div => 
             div.offsetLeft + 75 >= e.pageX && 
@@ -398,6 +446,7 @@ divs.forEach(div => {
             div.offsetLeft <= e.pageX && 
             div.offsetTop <= e.pageY
         )
+
         movementPiece(img,divFind)
     })
 })
